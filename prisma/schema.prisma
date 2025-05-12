@@ -1,0 +1,246 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider = "prisma-client-js"
+    // output   = "../generated/prisma"
+}
+
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+
+enum StatusPayment {
+    PENDING
+    COMPLETED
+    CANCELLED
+}
+
+
+enum Expenses {
+    FAMILY
+    INDIVIDUAL
+    WORK
+    FREE
+
+}
+
+model Payment {
+    id              String   @id @default(uuid())
+    userId          String
+    date            DateTime
+    // amount          Float
+    createdAt       DateTime @default(now())
+    // updatedAt       DateTime @updatedAt
+
+    // version         Int @default(0)
+
+    paymentDetails PaymentDetail[]
+}
+
+
+model Service {
+    id              String   @id @default(uuid())
+    expenses        Expenses
+    description     String
+    paymentServices PaymentService[]
+}
+
+
+model PaymentService {
+    id              String   @id @default(uuid())
+    userId          String
+    name            String
+    amount          Float
+    status          StatusPayment
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    expirationDate  DateTime?
+
+    serviceId String
+    service Service @relation(fields: [serviceId], references: [id])
+
+    balanceId String? // Nuevo campo para la relación con Balance
+    balance   Balance?  @relation(fields: [balanceId], references: [id]) // Relación con Balance
+
+    navlyBalanceId String? // Nuevo campo para la relación con NavlyBalance
+    navlyBalance   NavlyBalance?  @relation(fields: [navlyBalanceId], references: [id]) // Relación con NavlyBalance
+
+    paymentDetails PaymentDetail[]
+
+    version         Int @default(0)
+
+    @@index([name])
+}
+
+
+model PaymentDetail {
+    id              String   @id @default(uuid())
+    userId          String
+    amount          Float
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    paymentId String // Nuevo campo para la relación con Payment
+    payment   Payment  @relation(fields: [paymentId], references: [id]) // Relación con Payment
+
+    paymentServiceId String // Nuevo campo para la relación con PaymentService
+    paymentService   PaymentService  @relation(fields: [paymentServiceId], references: [id]) // Relación con PaymentService
+
+    version         Int @default(0)
+}
+
+
+model Account {
+    id              String   @id @default(uuid())
+    userId          String
+    username        String
+    password        String
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime? @updatedAt
+
+    navlyId         String?  @unique
+    navly           Navly?   @relation("AccountToNavly", fields: [navlyId], references: [id])
+
+    version         Int @default(0)
+
+    @@index([username, userId, navlyId ])
+}
+
+
+model Navly {
+    id              String   @id @default(uuid())
+    userId          String
+    name            String?
+    url             String
+    avatar          String?
+    description     String?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime? @updatedAt
+
+    account         Account? @relation("AccountToNavly")
+
+    version         Int @default(0)
+
+    navlyBalances NavlyBalance[]
+    @@index([name])
+}
+
+
+enum TypeBalance {
+    CREDIT
+    DEBIT
+    BANK_ACCOUNT
+    CASH
+    FREELANCE
+    SAVINGS
+    INVESTMENT
+    OTHER
+}
+
+enum TypeCard {
+    VISA
+    VISA_ELECTRON
+    MASTERCARD
+    AMERICAN_EXPRESS
+    DISCOVER
+    JCB
+    DINERS_CLUB
+    UNIONPAY
+    MAESTRO
+    ELO
+    HIPERCARD
+    Aura
+}
+
+
+model Balance {
+    id              String   @id @default(uuid())
+    userId          String
+    name            String
+    type            TypeBalance
+
+    typeCard            TypeCard?
+    balance             Float
+    cardNumber          String?
+    accountNumber       String?
+    bankName            String?
+    expirationDate      DateTime?
+    verificationNumber  String?
+    lastPayment         DateTime?
+
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
+
+    version         Int @default(0)
+
+    navlyBalances    NavlyBalance[]
+    paymentServices PaymentService[]
+
+    @@index([name])
+}
+
+
+model NavlyBalance {
+    id        String   @id @default(uuid())
+    userId    String
+    navlyId   String
+    navly     Navly    @relation(fields: [navlyId], references: [id])
+    balanceId String // Nuevo campo para la relación con Balance
+    balance   Balance  @relation(fields: [balanceId], references: [id]) // Relación con Balance
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    version   Int      @default(0)
+    principal Boolean @default(false)
+    expirationDate  DateTime?
+
+    paymentServices PaymentService[]
+
+    @@index([navlyId]) // Añadido índice para navlyId
+    @@index([balanceId]) // Añadido índice para balanceId
+}
+
+
+enum LevelNote {
+    HIGH
+    MEDIUM
+    LOW
+    NONE
+}
+
+
+model Note {
+    id              String   @id @default(uuid())
+    userId          String
+    title           String
+    content         String
+    level           LevelNote
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    typeNoteId      String?
+    typeNote        TypeNote? @relation(fields: [typeNoteId], references: [id])
+
+    version         Int @default(0)
+
+    @@index([title])
+}
+
+model TypeNote {
+    id              String   @id @default(uuid())
+    userId          String
+    name            String
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    version         Int @default(0)
+    notes           Note[]
+
+    @@index([name])
+}
