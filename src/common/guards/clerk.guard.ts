@@ -5,7 +5,8 @@ import {
     UnauthorizedException
 } from '@nestjs/common';
 
-import { verifyToken } from '@clerk/clerk-sdk-node';
+import { verifyToken }  from '@clerk/clerk-sdk-node';
+import { ENVS }         from '@common/config/envs';
 
 @Injectable()
 export class ClerkGuard implements CanActivate {
@@ -20,7 +21,7 @@ export class ClerkGuard implements CanActivate {
         try {
             const payload = await verifyToken(
                 token, {
-                    secretKey: process.env.CLERK_SECRET_KEY
+                    secretKey: ENVS.CLERK_SECRET_KEY
                 }
             );
 
