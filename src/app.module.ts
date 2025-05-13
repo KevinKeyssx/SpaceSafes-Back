@@ -10,8 +10,8 @@ import { PaymentsModule }   from '@payments/payments.module';
 import { CommonModule }     from '@common/common.module';
 
 @Module({
-  imports: [AccountsModule, NavlyModule, NotesModule, BalancesModule, PaymentsModule, CommonModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [AccountsModule, NavlyModule, NotesModule, BalancesModule, PaymentsModule, CommonModule],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}
