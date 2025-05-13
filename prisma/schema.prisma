@@ -74,8 +74,6 @@ model PaymentService {
 
     paymentDetails PaymentDetail[]
 
-    version         Int @default(0)
-
     @@index([name])
 }
 
@@ -92,8 +90,6 @@ model PaymentDetail {
 
     paymentServiceId String // Nuevo campo para la relación con PaymentService
     paymentService   PaymentService  @relation(fields: [paymentServiceId], references: [id]) // Relación con PaymentService
-
-    version         Int @default(0)
 }
 
 
@@ -108,7 +104,6 @@ model Account {
     navlyId         String?  @unique
     navly           Navly?   @relation("AccountToNavly", fields: [navlyId], references: [id])
 
-    version         Int @default(0)
 
     @@index([username, userId, navlyId ])
 }
@@ -125,8 +120,6 @@ model Navly {
     updatedAt       DateTime? @updatedAt
 
     account         Account? @relation("AccountToNavly")
-
-    version         Int @default(0)
 
     navlyBalances NavlyBalance[]
     @@index([name])
@@ -156,7 +149,7 @@ enum TypeCard {
     MAESTRO
     ELO
     HIPERCARD
-    Aura
+    AURA
 }
 
 
@@ -168,8 +161,8 @@ model Balance {
 
     typeCard            TypeCard?
     balance             Float
-    cardNumber          String?
-    accountNumber       String?
+    cardNumber          String? @unique
+    accountNumber       String? @unique
     bankName            String?
     expirationDate      DateTime?
     verificationNumber  String?
@@ -177,8 +170,6 @@ model Balance {
 
     createdAt           DateTime @default(now())
     updatedAt           DateTime @updatedAt
-
-    version         Int @default(0)
 
     navlyBalances    NavlyBalance[]
     paymentServices PaymentService[]
@@ -227,8 +218,6 @@ model Note {
     typeNoteId      String?
     typeNote        TypeNote? @relation(fields: [typeNoteId], references: [id])
 
-    version         Int @default(0)
-
     @@index([title])
 }
 
@@ -239,7 +228,6 @@ model TypeNote {
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 
-    version         Int @default(0)
     notes           Note[]
 
     @@index([name])
