@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateBalanceDto } from './create-balance.dto';
+import { PartialType } from '@nestjs/swagger';
+import { BasicBalanceDto } from './basic-balance.dto';
 
-export class UpdateBalanceDto extends PartialType(CreateBalanceDto) {}
+export class UpdateBalanceDto extends PartialType( BasicBalanceDto ) {}
