@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { OnModuleInit } from '@nestjs/common';
 
-import { Account, PrismaClient } from '@prisma/client';
+import { Account, Navly, PrismaClient } from '@prisma/client';
 
 import { CreateAccountDto } from '@accounts/dto/create-account.dto';
 import { UpdateAccountDto } from '@accounts/dto/update-account.dto';
 import { AccountEntity }    from '@accounts/entities/account.entity';
+import { PrismaException } from '@common/error/prisma-catch';
+
+
+import ogs from 'open-graph-scraper';
 
 
 @Injectable()
@@ -15,12 +19,64 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
 	}
 
 
-    create( createAccountDto: CreateAccountDto ) {
+    async create( createAccountDto: CreateAccountDto ) {
         try {
-            const account = this.account.create({
-                select : {
+            let navly;
+
+            const { url, ...rest } = createAccountDto;
+
+            if ( url ) {
+                const { result }    = await ogs({ url });
+                const avatar        = result.ogImage?.[0].url;
+                const description   = result.ogDescription;
+                const name          = result.ogTitle;
+
+                navly = await this.navly.create({
+                    data: {
+                        url,
+                        avatar,
+                        description,
+                        name,
+                        userId: rest.userId
+                    },
+                });
+            }
+
+            const account = await this.account.create({
+                data: rest,
+            });
+
+            return { account, navly };
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'Account' );
+        }
+    }
+
+
+    async findAll( userId: string ) {
+        return await this.account.findMany({
+            select: {
+                id: true,
+                username: true,
+                password: true,
+                createdAt: true,
+                updatedAt: true,
+                navly: {
+                    select: {
+                        url: true,
+                    }
+                },
+            },
+            where: { userId }
+        });
+    }
+
+
+    async findOne( id: string ) {
+        try {
+            const account = await this.account.findUnique({
+                select: {
                     id: true,
-                    userId: true,
                     username: true,
                     password: true,
                     createdAt: true,
@@ -30,30 +86,66 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
                             url: true,
                         }
                     },
-                    version: true
                 },
-                data: createAccountDto,
+                where: { id },
             });
 
             return account;
         } catch ( error ) {
-            throw error;
+            throw PrismaException.catch( error, 'Account' );
         }
     }
 
-    findAll() {
-        return `This action returns all accounts`;
+
+    async update(
+        id: string,
+        updateAccountDto: UpdateAccountDto
+    ) {
+        try {
+
+            // TODO: Hay que tener el userId del la request
+            // let navly;
+
+            // const { url, ...rest } = updateAccountDto;
+
+            // if ( url ) {
+            //     const { result }    = await ogs({ url });
+            //     const avatar        = result.ogImage?.[0].url;
+            //     const description   = result.ogDescription;
+            //     const name          = result.ogTitle;
+
+            //     navly = await this.navly.create({
+            //         data: {
+            //             url,
+            //             avatar,
+            //             description,
+            //             name,
+            //             userId: rest.userId
+            //         },
+            //     });
+            // }
+
+            const account = await this.account.update({
+                where: { id },
+                data: updateAccountDto,
+            });
+
+            return account;
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'Account' );
+        }
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} account`;
-    }
 
-    update(id: number, updateAccountDto: UpdateAccountDto) {
-        return `This action updates a #${id} account`;
-    }
+    async remove( id: string ) {
+        try {
+            const account = await this.account.delete({
+                where: { id },
+            });
 
-    remove(id: number) {
-        return `This action removes a #${id} account`;
+            return account;
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'Account' );
+        }
     }
 }
