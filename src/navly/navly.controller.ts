@@ -1,34 +1,61 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    ParseUUIDPipe
+} from '@nestjs/common';
+
 import { NavlyService } from './navly.service';
 import { CreateNavlyDto } from './dto/create-navly.dto';
 import { UpdateNavlyDto } from './dto/update-navly.dto';
 
-@Controller('navly')
+
+@Controller( 'navly' )
 export class NavlyController {
-  constructor(private readonly navlyService: NavlyService) {}
+    constructor(private readonly navlyService: NavlyService) {}
 
-  @Post()
-  create(@Body() createNavlyDto: CreateNavlyDto) {
-    return this.navlyService.create(createNavlyDto);
-  }
 
-  @Get()
-  findAll() {
-    return this.navlyService.findAll();
-  }
+    @Post()
+    create(
+        @Body() createNavlyDto: CreateNavlyDto
+    ) {
+        return this.navlyService.create( createNavlyDto );
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.navlyService.findOne(+id);
-  }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNavlyDto: UpdateNavlyDto) {
-    return this.navlyService.update(+id, updateNavlyDto);
-  }
+    @Get( 'user/:id' )
+    findAll(
+        @Param( 'id' ) id: string
+    ) {
+        return this.navlyService.findAll( id );
+    }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.navlyService.remove(+id);
-  }
+
+    @Get( ':id' )
+    findOne(
+        @Param('id', ParseUUIDPipe ) id: string
+    ) {
+        return this.navlyService.findOne( id );
+    }
+
+
+    @Patch(':id')
+    update(
+        @Param('id', ParseUUIDPipe ) id: string,
+        @Body() updateNavlyDto: UpdateNavlyDto
+    ) {
+        return this.navlyService.update( id, updateNavlyDto );
+    }
+
+
+    @Delete(':id')
+    remove(
+        @Param('id', ParseUUIDPipe ) id: string
+    ) {
+        return this.navlyService.remove( id );
+    }
 }
