@@ -20,6 +20,7 @@
         "@common/*": ["src/common/*"],
         "@services/*": ["src/services/*"],
         "@expenses/*": ["src/expenses/*"],
+        "@payment-services/*": ["src/payment-services/*"],
     },
     "incremental": true,
     "skipLibCheck": true,
