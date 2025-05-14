@@ -18,6 +18,8 @@
         "@navly/*": ["src/navly/*"],
         "@notes/*": ["src/notes/*"],
         "@common/*": ["src/common/*"],
+        "@services/*": ["src/services/*"],
+        "@expenses/*": ["src/expenses/*"],
     },
     "incremental": true,
     "skipLibCheck": true,
