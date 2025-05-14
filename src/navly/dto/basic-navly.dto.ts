@@ -11,7 +11,7 @@ export class BasicNavlyDto {
         required: true
     })
     @IsString()
-    @Length( 1, 100 )
+    @Length( 1, 255 )
     url: string;
 
 
