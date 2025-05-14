@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, Length } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsUUID, Length } from 'class-validator';
 
 export class BasicAccountDto {
     @ApiProperty({
@@ -29,4 +29,24 @@ export class BasicAccountDto {
     @IsString()
     @Length( 1, 100 )
     url?: string;
+
+    @ApiProperty({
+        description: 'Optional name associated with the account',
+        example: 'Google',
+        required: false
+    })
+    @IsOptional()
+    @IsString()
+    @Length( 1, 100 )
+    name?: string;
+
+    @ApiProperty({
+        description: 'Optional favorite associated with the account',
+        example: true,
+        required: false
+    })
+    @IsOptional()
+    @IsBoolean()
+    isFavorite?: boolean;
+
 }
