@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { OnModuleInit } from '@nestjs/common';
 
 import { Account, Navly, PrismaClient } from '@prisma/client';
@@ -23,31 +23,65 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
         try {
             let navly;
 
-            const { url, ...rest } = createAccountDto;
+            const { url, balanceId, expirationDatePayment, expirationDate, amount, ...rest } = createAccountDto;
+            let avatar : string | undefined;
+            let description : string | undefined;
+            let name : string | undefined;
 
             if ( url ) {
                 const { result }    = await ogs({ url });
-                const avatar        = result.ogImage?.[0].url;
-                const description   = result.ogDescription;
-                const name          = result.ogTitle;
-
-                navly = await this.navly.create({
-                    data: {
-                        url,
-                        avatar,
-                        description,
-                        name,
-                        userId: rest.userId
-                    },
-                });
+                avatar        = result.ogImage?.[0].url;
+                description   = result.ogDescription;
+                name          = result.ogTitle;
             }
 
             const account = await this.account.create({
                 data: rest,
             });
 
+            if ( url ) {
+                navly = await this.navly.create({
+                    data: {
+                        url,
+                        avatar,
+                        description,
+                        name,
+                        userId: rest.userId,
+                        accountId: account.id
+                    },
+                });
+            }
+
+            if ( balanceId ) {
+                await this.navlyBalance.create({
+                    data: {
+                        navlyId         : navly.id,
+                        balanceId       : balanceId,
+                        userId          : createAccountDto.userId,
+                        principal       : true,
+                        expirationDate,
+                    },
+                });
+
+                if ( amount && expirationDatePayment ) {
+                    await this.paymentService.create({
+                        data: {
+                            userId          : createAccountDto.userId,
+                            amount          : amount,
+                            expirationDate: expirationDatePayment,
+                            serviceId       : 'c712d5df-1b60-4d69-bddf-d8a6e003e3e2',
+                            navlyId         : navly.id,
+                        },
+                    });
+                }
+            }
+
             return { account, navly };
         } catch ( error ) {
+            if ( error.error ) {
+                throw new NotFoundException( error.result.error ?? 'Page not found');
+            }
+
             throw PrismaException.catch( error, 'Account' );
         }
     }
