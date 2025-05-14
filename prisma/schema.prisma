@@ -23,14 +23,6 @@ enum StatusPayment {
 }
 
 
-enum Expenses {
-    FAMILY
-    INDIVIDUAL
-    WORK
-    FREE
-
-}
-
 model Payment {
     id              String   @id @default(uuid())
     userId          String
@@ -39,42 +31,59 @@ model Payment {
     createdAt       DateTime @default(now())
     // updatedAt       DateTime @updatedAt
 
-    // version         Int @default(0)
-
     paymentDetails PaymentDetail[]
 }
 
 
+model Expense {
+    id          String    @id @default(uuid())
+    userId      String?
+
+    name        String    // Ej: "Hogar", "Entretenimiento"
+    description String?
+
+    services Service[]
+
+    @@unique([name, userId]) // Nombre único por usuario
+    @@index([name, userId]) // Optimizar búsquedas
+}
+
+
 model Service {
-    id              String   @id @default(uuid())
-    expenses        Expenses
-    description     String
+    id          String    @id @default(uuid())
+    userId      String?
+
+    name        String    // Ej: "Netflix", "Supermercado"
+    description String?
+
+    expense       Expense     @relation(fields: [expenseId], references: [id])
+    expenseId     String
+
     paymentServices PaymentService[]
+
+    @@index([expenseId, userId]) // Optimizar búsquedas
+    @@unique([name, expenseId, userId]) // Nombre único por usuario
 }
 
 
 model PaymentService {
     id              String   @id @default(uuid())
     userId          String
-    name            String
     amount          Float
-    status          StatusPayment
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
     expirationDate  DateTime?
+    description     String?
 
     serviceId String
     service Service @relation(fields: [serviceId], references: [id])
 
-    balanceId String? // Nuevo campo para la relación con Balance
-    balance   Balance?  @relation(fields: [balanceId], references: [id]) // Relación con Balance
-
-    navlyBalanceId String? // Nuevo campo para la relación con NavlyBalance
-    navlyBalance   NavlyBalance?  @relation(fields: [navlyBalanceId], references: [id]) // Relación con NavlyBalance
+    navlyId String? // Nuevo campo para la relación con NavlyBalance
+    navly   Navly?  @relation(fields: [navlyId], references: [id]) // Relación con NavlyBalance
 
     paymentDetails PaymentDetail[]
 
-    @@index([name])
+    @@index([userId, serviceId, navlyId])
 }
 
 
@@ -82,36 +91,44 @@ model PaymentDetail {
     id              String   @id @default(uuid())
     userId          String
     amount          Float
+    status          StatusPayment
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
+
+    balanceId String // Nuevo campo para la relación con Balance
+    balance   Balance @relation(fields: [balanceId], references: [id]) // Relación con Balance
 
     paymentId String // Nuevo campo para la relación con Payment
     payment   Payment  @relation(fields: [paymentId], references: [id]) // Relación con Payment
 
     paymentServiceId String // Nuevo campo para la relación con PaymentService
     paymentService   PaymentService  @relation(fields: [paymentServiceId], references: [id]) // Relación con PaymentService
+
+    @@index([userId, paymentId, paymentServiceId])
 }
 
 
 model Account {
     id              String   @id @default(uuid())
     userId          String
+    name            String?
     username        String
     password        String
     createdAt       DateTime @default(now())
     updatedAt       DateTime? @updatedAt
 
-    navlyId         String?  @unique
-    navly           Navly?   @relation("AccountToNavly", fields: [navlyId], references: [id])
+    isFavorite      Boolean @default(false)
 
+    navly Navly[]
 
-    @@index([username, userId, navlyId ])
+    @@index([username, userId ])
 }
 
 
 model Navly {
     id              String   @id @default(uuid())
     userId          String
+
     name            String?
     url             String
     avatar          String?
@@ -119,10 +136,18 @@ model Navly {
     createdAt       DateTime @default(now())
     updatedAt       DateTime? @updatedAt
 
-    account         Account? @relation("AccountToNavly")
+    lastViewed      DateTime @default(now())
+    stars           Int @default(0)
+    isFavorite      Boolean @default(false)
+
+    accountId String?
+    account     Account? @relation(fields: [accountId], references: [id])
 
     navlyBalances NavlyBalance[]
-    @@index([name])
+    paymentServices PaymentService[]
+
+    @@index([name, userId])
+    @@unique([url, userId])
 }
 
 
@@ -171,30 +196,31 @@ model Balance {
     createdAt           DateTime @default(now())
     updatedAt           DateTime @updatedAt
 
-    navlyBalances    NavlyBalance[]
-    paymentServices PaymentService[]
+    navlyBalances       NavlyBalance[]
+    paymentDetails      PaymentDetail[]
 
-    @@index([name])
+    @@index([name, userId])
 }
 
 
 model NavlyBalance {
     id        String   @id @default(uuid())
     userId    String
-    navlyId   String
-    navly     Navly    @relation(fields: [navlyId], references: [id])
-    balanceId String // Nuevo campo para la relación con Balance
-    balance   Balance  @relation(fields: [balanceId], references: [id]) // Relación con Balance
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    version   Int      @default(0)
+
     principal Boolean @default(false)
     expirationDate  DateTime?
 
-    paymentServices PaymentService[]
+    navlyId   String
+    navly     Navly    @relation(fields: [navlyId], references: [id])
 
-    @@index([navlyId]) // Añadido índice para navlyId
-    @@index([balanceId]) // Añadido índice para balanceId
+    balanceId String
+    balance   Balance  @relation(fields: [balanceId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([navlyId, balanceId, userId])
+    @@unique([navlyId, balanceId, userId])
 }
 
 
@@ -218,7 +244,7 @@ model Note {
     typeNoteId      String?
     typeNote        TypeNote? @relation(fields: [typeNoteId], references: [id])
 
-    @@index([title])
+    @@index([title, userId])
 }
 
 model TypeNote {
@@ -230,5 +256,5 @@ model TypeNote {
 
     notes           Note[]
 
-    @@index([name])
+    @@index([name, userId])
 }
