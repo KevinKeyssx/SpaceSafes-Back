@@ -9,9 +9,10 @@ import {
     ParseUUIDPipe
 } from '@nestjs/common';
 
-import { ExpensesService } from './expenses.service';
-import { CreateExpenseDto } from './dto/create-expense.dto';
-import { UpdateExpenseDto } from './dto/update-expense.dto';
+import { ExpensesService }  from '@expenses/expenses.service';
+import { CreateExpenseDto } from '@expenses/dto/create-expense.dto';
+import { UpdateExpenseDto } from '@expenses/dto/update-expense.dto';
+
 
 @Controller('expenses')
 export class ExpensesController {
