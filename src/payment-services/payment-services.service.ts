@@ -1,26 +1,75 @@
-import { Injectable } from '@nestjs/common';
-import { CreatePaymentServiceDto } from './dto/create-payment-service.dto';
-import { UpdatePaymentServiceDto } from './dto/update-payment-service.dto';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+
+import { PrismaClient } from '@prisma/client';
+
+import { PrismaException }          from '@common/error/prisma-catch';
+import { CreatePaymentServiceDto }  from '@payment-services/dto/create-payment-service.dto';
+import { UpdatePaymentServiceDto }  from '@payment-services/dto/update-payment-service.dto';
+
 
 @Injectable()
-export class PaymentServicesService {
-    create(createPaymentServiceDto: CreatePaymentServiceDto) {
-        return 'This action adds a new paymentService';
+export class PaymentServicesService extends PrismaClient implements OnModuleInit {
+    onModuleInit() {
+		this.$connect();
+	}
+
+
+    async create( createPaymentServiceDto: CreatePaymentServiceDto ) {
+        try {
+            const paymentService = await this.paymentService.create({
+                data: createPaymentServiceDto,
+            });
+
+            return paymentService;
+        } catch (error) {
+            throw PrismaException.catch( error, 'PaymentService' );
+        }
     }
 
-    findAll() {
-        return `This action returns all paymentServices`;
+
+    async findAll( userId: string ) {
+        try {
+            return await this.paymentService.findMany({
+                where: { userId },
+            });
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'PaymentService' );
+        }
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} paymentService`;
+
+    async findOne( id: string ) {
+        const paymentService = await this.paymentService.findUnique({
+            where: { id },
+        });
+
+        if ( !paymentService ) {
+            throw new NotFoundException( 'PaymentService not found' );
+        }
+
+        return paymentService;
     }
 
-    update(id: number, updatePaymentServiceDto: UpdatePaymentServiceDto) {
-        return `This action updates a #${id} paymentService`;
+
+    async update( id: string, updatePaymentServiceDto: UpdatePaymentServiceDto ) {
+        try {
+            return await this.paymentService.update({
+                where: { id },
+                data: updatePaymentServiceDto,
+            });
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'PaymentService' );
+        }
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} paymentService`;
+
+    async remove( id: string ) {
+        try {
+            return await this.paymentService.delete({
+                where: { id },
+            });
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'PaymentService' );
+        }
     }
 }
