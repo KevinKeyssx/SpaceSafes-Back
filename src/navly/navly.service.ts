@@ -82,6 +82,9 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
         try {
             return await this.navly.findMany({
                 where: { userId },
+                include: {
+                    navlyBalances: true
+                }
             });
         } catch ( error ) {
             throw PrismaException.catch( error, 'Navly' );
@@ -95,6 +98,9 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
         try {
             return await this.navly.findUnique({
                 where: { id },
+                include: {
+                    navlyBalances: true
+                }
             });
         } catch ( error ) {
             throw PrismaException.catch( error, 'Navly' );
