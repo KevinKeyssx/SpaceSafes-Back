@@ -1,6 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-import { IsOptional, IsString, Length } from "class-validator";
+import {
+    IsEnum,
+    IsOptional,
+    IsString,
+    Length
+} from "class-validator";
+
+import { WebsiteCategory } from "@navly/enum/website-category.enum";
 
 
 export class BasicNavlyDto {
@@ -36,4 +43,17 @@ export class BasicNavlyDto {
     @Length( 1, 200 )
     description?: string;
 
+    @ApiProperty({
+        description: 'Category of the website',
+        example: 'DEVELOPMENT',
+        enum: WebsiteCategory,
+        enumName: 'WebsiteCategory',
+        default: WebsiteCategory.OTHER,
+        required: false
+    })
+    @IsOptional()
+    @IsEnum(WebsiteCategory, {
+        message: 'category must be a valid WebsiteCategory'
+    })
+    category?: WebsiteCategory;
 }
