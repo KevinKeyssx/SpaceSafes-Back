@@ -10,21 +10,12 @@ import {
     IsPositive,
     MaxLength,
     IsDate,
-    Length
+    Length,
+    IsNotEmpty
 } from 'class-validator';  
 
 
 export class BasicPaymentServiceDto {
-
-    @ApiProperty({
-        description: 'Nombre del servicio de pago',
-        example: 'Pago de internet',
-        minLength: 3,
-        maxLength: 100
-    })
-    @IsString()
-    @Length(3, 100)
-    name: string;
 
     @ApiProperty({
         description: 'Monto del pago',
@@ -61,24 +52,18 @@ export class BasicPaymentServiceDto {
         example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
     })
     @IsUUID()
+    @IsNotEmpty()
     serviceId: string;
 
+
     @ApiPropertyOptional({
-        description: 'ID del balance asociado',
+        description: 'ID del Navly relacionado (UUID)',
         example: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
         nullable: true
     })
     @IsOptional()
+    @IsString()
     @IsUUID()
-    balanceId?: string;
-
-    @ApiPropertyOptional({
-        description: 'ID del balance Navly asociado',
-        example: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
-        nullable: true
-    })
-    @IsOptional()
-    @IsUUID()
-    navlyBalanceId?: string;
+    navlyId?: string | null;
 
 }
