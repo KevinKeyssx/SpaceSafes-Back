@@ -14,23 +14,23 @@ export class PaymentServicesController {
         return this.paymentServicesService.create(createPaymentServiceDto);
     }
 
-    @Get()
-    findAll() {
-        return this.paymentServicesService.findAll();
+    @Get( 'user/:id' )
+    findAll(@Param('id') id: string) {
+        return this.paymentServicesService.findAll(id);
     }
 
     @Get(':id')
     findOne(@Param('id') id: string) {
-        return this.paymentServicesService.findOne(+id);
+        return this.paymentServicesService.findOne(id);
     }
 
     @Patch(':id')
     update(@Param('id') id: string, @Body() updatePaymentServiceDto: UpdatePaymentServiceDto) {
-        return this.paymentServicesService.update(+id, updatePaymentServiceDto);
+        return this.paymentServicesService.update(id, updatePaymentServiceDto);
     }
 
     @Delete(':id')
     remove(@Param('id') id: string) {
-        return this.paymentServicesService.remove(+id);
+        return this.paymentServicesService.remove(id);
     }
 }
