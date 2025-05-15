@@ -24,14 +24,13 @@ enum StatusPayment {
 
 
 model Payment {
-    id              String   @id @default(uuid())
+    id      String @id @default(uuid())
     userId          String
-    date            DateTime
-    // amount          Float
-    createdAt       DateTime @default(now())
-    // updatedAt       DateTime @updatedAt
+    month   Int
+    year    Int
 
     paymentDetails PaymentDetail[]
+    @@unique([month, year, userId]) // Un período por usuario
 }
 
 
