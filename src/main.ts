@@ -6,11 +6,12 @@ import { NestFactory }              from '@nestjs/core';
 import { Logger, ValidationPipe }   from '@nestjs/common';
 
 import { AppModule } from './app.module';
+import { ClerkGuard } from '@common/guards/clerk.guard';
 
 
 ( async () => {
 	const logger    = new Logger( 'Main' );
-    const app = await NestFactory.create( AppModule );
+    const app       = await NestFactory.create( AppModule );
 
     app.useGlobalPipes(
         new ValidationPipe({
@@ -18,6 +19,9 @@ import { AppModule } from './app.module';
             forbidNonWhitelisted: true,
             transform: true,
         })
+    )
+    .useGlobalGuards(
+        new ClerkGuard()
     )
     .setGlobalPrefix( 'api/v1' )
     .enableCors({
