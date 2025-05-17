@@ -1,62 +1,191 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://github.com/KevinKeyssx/SpaceSafes-Back/assets/your-asset-id/logo.png" width="200" alt="SpaceSafes Logo" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+<h1 align="center">SpaceSafes</h1>
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <a href="https://clerk.com" target="_blank"><img src="https://img.shields.io/badge/Authentication-Clerk-6C47FF" alt="Clerk" /></a>
+  <a href="https://nestjs.com" target="_blank"><img src="https://img.shields.io/badge/Framework-NestJS-ea2845" alt="NestJS" /></a>
+  <a href="https://www.prisma.io" target="_blank"><img src="https://img.shields.io/badge/ORM-Prisma-2D3748" alt="Prisma" /></a>
+  <a href="https://swagger.io" target="_blank"><img src="https://img.shields.io/badge/API_Docs-Swagger-85EA2D" alt="Swagger" /></a>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## 🚀 Descripción
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+SpaceSafes es una plataforma innovadora desarrollada para la Hackathon de Clerk que permite a los usuarios gestionar de forma segura sus cuentas, contraseñas y servicios web. La aplicación proporciona un espacio centralizado para almacenar credenciales de forma segura, gestionar suscripciones y monitorear balances financieros asociados a diferentes servicios web y personales.
 
-## Project setup
+## ✨ Características Principales
 
-```bash
-$ pnpm install
+- **Gestión de Cuentas**: Almacenamiento seguro de credenciales para diferentes servicios web
+- **Navegación Web (Navly)**: Sistema para organizar y acceder a sitios web favoritos con metadatos enriquecidos
+- **Gestión de Balances**: Control de saldos y pagos asociados a diferentes servicios
+
+## 🔒 Integración con Clerk
+
+SpaceSafes utiliza Clerk como sistema principal de autenticación y gestión de usuarios, aprovechando sus potentes características:
+
+### Implementación del Guard de Clerk
+
+Uno de los componentes clave de nuestra integración es el `ClerkGuard`, un guard personalizado que protege todas las rutas de la API:
+
+```typescript
+// src/common/guards/clerk.guard.ts
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Clerk } from '@clerk/clerk-sdk-node';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
+export class ClerkGuard implements CanActivate {
+  private clerk: Clerk;
+
+  constructor(private configService: ConfigService) {
+    this.clerk = new Clerk({
+      secretKey: this.configService.get<string>('CLERK_SECRET_KEY'),
+    });
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+    
+    if (!token) {
+      throw new UnauthorizedException('No authorization token provided');
+    }
+    
+    try {
+      // Verificar el token con Clerk
+      const session = await this.clerk.verifyToken(token);
+      request.user = session;
+      return true;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+}
 ```
 
-## Compile and run the project
+Este guard se aplica globalmente en nuestra aplicación:
+
+```typescript
+// src/main.ts
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { ClerkGuard } from './common/guards/clerk.guard';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    })
+  )
+  .useGlobalGuards(
+    new ClerkGuard()
+  )
+  .setGlobalPrefix('api/v1')
+  .enableCors({
+    origin: ['http://localhost:3017', 'http://localhost:4321', 'https://space-safes.vercel.app'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
+  });
+  
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+### Beneficios de Clerk en SpaceSafes
+
+- **Autenticación Segura**: Implementación robusta de JWT con rotación de tokens
+- **Verificación de Identidad**: Validación de usuarios mediante diversos métodos
+- **Integración con Frontend**: Compatibilidad perfecta con nuestro frontend en Astro
+- **Protección de Endpoints**: Todas las rutas están protegidas automáticamente
+- **Gestión de Sesiones**: Control eficiente de sesiones de usuario
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Backend**: NestJS (Framework de Node.js basado en TypeScript)
+- **Base de Datos**: PostgreSQL con Prisma como ORM
+- **Autenticación**: Clerk para gestión de usuarios y sesiones
+- **Validación**: Class-validator y Zod para validación de datos
+- **Documentación API**: Swagger UI integrado
+- **Extracción de Metadatos**: Open Graph Scraper para enriquecer datos de URLs
+- **Gestión de Dependencias**: PNPM como gestor de paquetes
+
+## 📦 Estructura del Proyecto
+
+```
+src/
+├── accounts/         # Módulo de gestión de cuentas
+├── balances/         # Módulo de gestión de balances financieros
+├── common/           # Utilidades, DTOs y configuraciones compartidas
+│   ├── config/       # Configuración de variables de entorno con Zod
+│   ├── dtos/         # Data Transfer Objects compartidos
+│   ├── error/        # Manejo centralizado de errores
+│   └── guards/       # Guards de autenticación (ClerkGuard)
+├── navly/            # Módulo de navegación y gestión de sitios web
+├── notes/            # Módulo de notas seguras
+├── payments/         # Módulo de gestión de pagos
+└── main.ts           # Punto de entrada de la aplicación
+```
+
+## 🚀 Instalación y Ejecución
 
 ```bash
-# development
-$ pnpm run start
+# Instalación de dependencias
+$ pnpm install
 
-# watch mode
+# Configuración de variables de entorno
+$ cp .env.example .env
+# Editar .env con tus credenciales de Clerk y configuración de base de datos
+
+# Ejecución en modo desarrollo
 $ pnpm run start:dev
 
-# production mode
+# Ejecución en modo producción
 $ pnpm run start:prod
 ```
 
-## Run tests
+## 📝 Documentación API
+
+Una vez iniciada la aplicación, puedes acceder a la documentación interactiva de la API en:
+
+```
+http://localhost:3000/api/docs
+```
+
+## 🧪 Pruebas
 
 ```bash
-# unit tests
+# Pruebas unitarias
 $ pnpm run test
 
-# e2e tests
+# Pruebas e2e
 $ pnpm run test:e2e
 
-# test coverage
+# Cobertura de pruebas
 $ pnpm run test:cov
 ```
+
+## 👥 Equipo
+
+Desarrollado para la Hackathon de Clerk por:
+
+- [Tu Nombre](https://github.com/KevinKeyssx)
+- [Otros miembros del equipo]
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo [MIT License](LICENSE).
 
 ## Deployment
 
