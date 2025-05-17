@@ -43,19 +43,28 @@ export class NavlyController {
     }
 
 
-    @Patch(':id')
+    @Patch( ':id' )
     update(
-        @Param('id', ParseUUIDPipe ) id: string,
+        @Param( 'id', ParseUUIDPipe ) id: string,
         @Body() updateNavlyDto: UpdateNavlyDto
     ) {
         return this.navlyService.update( id, updateNavlyDto );
     }
 
 
-    @Delete(':id')
+    @Delete( ':id' )
     remove(
         @Param('id', ParseUUIDPipe ) id: string
     ) {
         return this.navlyService.remove( id );
     }
+
+
+    @Delete( '/navly-balance/:id' )
+    removeNavlyBalance(
+        @Param( 'id', ParseUUIDPipe ) id: string
+    ) {
+        return this.navlyService.removeNavlyBalance( id );
+    }
+
 }
