@@ -162,19 +162,7 @@ Una vez iniciada la aplicación, puedes acceder a la documentación interactiva 
 ```
 http://localhost:3000/api/docs
 ```
-
-## 🧪 Pruebas
-
-```bash
-# Pruebas unitarias
-$ pnpm run test
-
-# Pruebas e2e
-$ pnpm run test:e2e
-
-# Cobertura de pruebas
-$ pnpm run test:cov
-```
+El puerto que tengas en tu archiv .env
 
 ## 👥 Equipo
 
