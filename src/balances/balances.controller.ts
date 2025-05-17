@@ -15,7 +15,7 @@ export class BalancesController {
     }
 
 
-    @Get('users/:id')
+    @Get('user/:id')
     findAll(
         @Param('id') userId: string
     ) {
