@@ -9,6 +9,7 @@ export enum TypeBalance {
     OTHER           = 'OTHER'
 }
 
+
 export enum TypeCard {
     VISA                = 'VISA',
     VISA_ELECTRON       = 'VISA_ELECTRON',
@@ -23,6 +24,7 @@ export enum TypeCard {
     HIPERCARD           = 'HIPERCARD',
     AURA                = 'AURA'
 }
+
 
 export const TypeBalanceValues = Object.values(TypeBalance);
 export const TypeCardValues = Object.values(TypeCard);
