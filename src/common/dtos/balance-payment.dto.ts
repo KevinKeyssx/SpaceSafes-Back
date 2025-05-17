@@ -7,13 +7,14 @@ import { Transform } from "class-transformer";
 export class BalancePaymentDto {
 
     @ApiProperty({
-        type: String,
-        description: 'ID de la balance',
-        required: false
+        type: [String],
+        description: 'Lista de IDs de balances',
+        required: false,
+        isArray: true
     })
-    @IsUUID()
+    @IsUUID(undefined, { each: true })
     @IsOptional()
-    balanceId?: string;
+    balanceIds?: string[];
 
     @ApiProperty({
         type: Date,
@@ -45,5 +46,5 @@ export class BalancePaymentDto {
     @IsNumber()
     @IsOptional()
     amount?: number;
-    
+
 }
