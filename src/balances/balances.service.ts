@@ -25,6 +25,20 @@ export class BalancesService extends PrismaClient implements OnModuleInit {
         expirationDate      : true,
         verificationNumber  : true,
         lastPayment         : true,
+        createdAt           : true,
+        updatedAt           : true,
+        navlyBalances       : {
+            select: {
+                navly: {
+                    select: {
+                        name: true,
+                        url: true,
+                        category: true,
+                    }
+                }
+
+            }
+        }
     };
 
 
