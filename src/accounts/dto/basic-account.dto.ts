@@ -27,7 +27,7 @@ export class BasicAccountDto {
     })
     @IsOptional()
     @IsString()
-    @Length( 1, 100 )
+    @Length( 1, 255 )
     url?: string;
 
     @ApiProperty({
