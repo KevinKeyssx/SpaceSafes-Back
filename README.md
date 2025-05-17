@@ -180,8 +180,7 @@ $ pnpm run test:cov
 
 Desarrollado para la Hackathon de Clerk por:
 
-- [Tu Nombre](https://github.com/KevinKeyssx)
-- [Otros miembros del equipo]
+- [Kevin Keyssx](https://github.com/KevinKeyssx)
 
 ## 📄 Licencia
 
