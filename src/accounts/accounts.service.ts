@@ -23,7 +23,7 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
         try {
             let navly;
 
-            const { url, balanceId, expirationDatePayment, expirationDate, amount, ...rest } = createAccountDto;
+            const { url, ...rest } = createAccountDto;
             let avatar : string | undefined;
             let description : string | undefined;
             let name : string | undefined;
@@ -37,49 +37,59 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
 
             const account = await this.account.create({
                 data: rest,
+                include: {
+                    navly: true
+                }
             });
 
             if ( url ) {
-                navly = await this.navly.create({
-                    data: {
-                        url,
-                        avatar,
-                        description,
-                        name,
-                        userId: rest.userId,
-                        accountId: account.id
-                    },
-                });
-            }
-
-            if ( balanceId ) {
-                await this.navlyBalance.create({
-                    data: {
-                        navlyId         : navly.id,
-                        balanceId       : balanceId,
-                        userId          : createAccountDto.userId,
-                        principal       : true,
-                        expirationDate,
-                    },
+                const existNavly  = await this.navly.findUnique({
+                    where: { url_userId: { url, userId: createAccountDto.userId } },
                 });
 
-                if ( amount && expirationDatePayment ) {
-                    await this.paymentService.create({
+                if ( !existNavly ) {
+                    navly = await this.navly.create({
                         data: {
-                            userId          : createAccountDto.userId,
-                            amount          : amount,
-                            expirationDate: expirationDatePayment,
-                            serviceId       : 'c712d5df-1b60-4d69-bddf-d8a6e003e3e2',
-                            navlyId         : navly.id,
+                            url,
+                            avatar,
+                            description,
+                            name,
+                            userId: rest.userId,
+                            accountId: account.id
                         },
                     });
                 }
+
             }
+
+            // if ( balanceId ) {
+            //     await this.navlyBalance.create({
+            //         data: {
+            //             navlyId         : navly.id,
+            //             balanceId       : balanceId,
+            //             userId          : createAccountDto.userId,
+            //             principal       : true,
+            //             expirationDate,
+            //         },
+            //     });
+
+            //     if ( amount && expirationDatePayment ) {
+            //         await this.paymentService.create({
+            //             data: {
+            //                 userId          : createAccountDto.userId,
+            //                 amount          : amount,
+            //                 expirationDate: expirationDatePayment,
+            //                 serviceId       : 'c712d5df-1b60-4d69-bddf-d8a6e003e3e2',
+            //                 navlyId         : navly.id,
+            //             },
+            //         });
+            //     }
+            // }
 
             return { account, navly };
         } catch ( error ) {
             if ( error.error ) {
-                throw new NotFoundException( error.result.error ?? 'Page not found');
+                throw new NotFoundException( 'URL invalid - Page not found' );
             }
 
             throw PrismaException.catch( error, 'Account' );
@@ -91,6 +101,7 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
         return await this.account.findMany({
             select: {
                 id: true,
+                name: true,
                 username: true,
                 password: true,
                 createdAt: true,
@@ -111,6 +122,7 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             const account = await this.account.findUnique({
                 select: {
                     id: true,
+                    name: true,
                     username: true,
                     password: true,
                     createdAt: true,
@@ -162,6 +174,9 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             const account = await this.account.update({
                 where: { id },
                 data: updateAccountDto,
+                include: {
+                    navly: true
+                }
             });
 
             return account;
