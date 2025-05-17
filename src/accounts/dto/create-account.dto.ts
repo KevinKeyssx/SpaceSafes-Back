@@ -8,6 +8,6 @@ import { BalancePaymentDto }    from '@common/dtos/balance-payment.dto';
 export class CreateAccountDto extends IntersectionType(
     BasicAccountDto,
     UserIdDto,
-    BalancePaymentDto
+    // BalancePaymentDto
 ) {}
 
