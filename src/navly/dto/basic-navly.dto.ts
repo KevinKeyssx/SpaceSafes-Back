@@ -1,9 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
 
 import {
+    IsBoolean,
     IsEnum,
     IsOptional,
     IsString,
+    IsUrl,
     Length
 } from "class-validator";
 
@@ -19,6 +21,7 @@ export class BasicNavlyDto {
     })
     @IsString()
     @Length( 1, 255 )
+    @IsUrl()
     url: string;
 
 
@@ -56,4 +59,14 @@ export class BasicNavlyDto {
         message: 'category must be a valid WebsiteCategory'
     })
     category?: WebsiteCategory;
+
+
+    @ApiProperty({
+        description: 'Optional favorite associated with the account',
+        example: true,
+        required: false
+    })
+    @IsOptional()
+    @IsBoolean()
+    isFavorite?: boolean;
 }
