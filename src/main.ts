@@ -25,8 +25,8 @@ import { ClerkGuard } from '@common/guards/clerk.guard';
     )
     .setGlobalPrefix( 'api/v1' )
     .enableCors({
-        origin: [ 'http://localhost:3000','http://localhost:4321', 'https://space-safes.vercel.app' ],
-        methods: [ 'GET', 'POST', 'PUT', 'DELETE' ],
+        origin: [ 'http://localhost:3017','http://localhost:4321', 'https://space-safes.vercel.app' ],
+        methods: [ 'GET', 'POST', 'PATCH', 'DELETE' ],
         credentials: true,
     });
 
