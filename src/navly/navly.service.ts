@@ -3,10 +3,10 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import ogs              from 'open-graph-scraper';
 
+import { PrismaException }  from '@common/error/prisma-catch';
 import { CreateNavlyDto }   from '@navly/dto/create-navly.dto';
 import { UpdateNavlyDto }   from '@navly/dto/update-navly.dto';
-import { PrismaException }  from '@common/error/prisma-catch';
-import { WebsiteCategory } from './enum/website-category.enum';
+import { WebsiteCategory }  from '@navly/enum/website-category.enum';
 
 
 @Injectable()
@@ -15,54 +15,56 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
 		this.$connect();
 	}
 
-    #extractMainNameFromUrl(url: string): string {
+    #extractMainNameFromUrl( url: string ): string {
         try {
-            const parsedUrl = new URL(url);
+            const parsedUrl = new URL( url );
             let hostname = parsedUrl.hostname;
 
-            if (!hostname) {
+            if ( !hostname ) {
                 return 'Mi sitio web';
             }
 
-            hostname = hostname.replace(/^www\./, '').replace(/^web\./, '').replace(/^m\./, '').replace(/\/$/, '');
+            hostname = hostname.replace( /^www\./, '').replace(/^web\./, '').replace(/^m\./, '').replace(/\/$/, '' );
 
-            const parts = hostname.split('.');
+            const parts = hostname.split( '.' );
 
-            if (parts.length >= 2) {
-                let name = parts.slice(0, parts.length - (parts[parts.length - 1] === 'com' ? 1 : 0)).join('.');
+            if ( parts.length >= 2 ) {
+                let name = parts.slice( 0, parts.length - ( parts[parts.length - 1] === 'com' ? 1 : 0 )).join( '.' );
 
-                const subParts = name.split('.');
+                const subParts = name.split( '.' );
 
-                if (subParts.length > 1) {
+                if ( subParts.length > 1 ) {
                     name = subParts[subParts.length - 1];
-                    if (subParts.length >= 2 && subParts[subParts.length - 2] !== 'com') {
-                        return `${this.#capitalizeFirstLetter(subParts[subParts.length - 2])} ${this.#capitalizeFirstLetter(name)}`;
+
+                    if ( subParts.length >= 2 && subParts[subParts.length - 2] !== 'com' ) {
+                        return `${this.#capitalizeFirstLetter(subParts[subParts.length - 2])} ${this.#capitalizeFirstLetter( name )}`;
                     }
                 }
-                return this.#capitalizeFirstLetter(name);
-            } else if (parts.length === 1) {
-                return this.#capitalizeFirstLetter(parts[0]);
+
+                return this.#capitalizeFirstLetter( name );
+            } else if ( parts.length === 1 ) {
+                return this.#capitalizeFirstLetter( parts[0] );
             }
 
-            return this.#capitalizeFirstLetter(hostname);
-        } catch (error) {
+            return this.#capitalizeFirstLetter( hostname );
+        } catch ( error ) {
             return 'Mi sitio web';
         }
     }
 
 
-    #capitalizeFirstLetter(str: string): string {
+    #capitalizeFirstLetter( str: string ): string {
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
 
-    async createNavlyBasic(createNavlyDto: CreateNavlyDto, avatar?: string ) {
-        const { balanceIds, expirationDatePayment, expirationDate, amount, ...navlyDto } = createNavlyDto
+    async createNavlyBasic( createNavlyDto: CreateNavlyDto, avatar?: string ) {
+        const { balanceIds, expirationDate, amount, ...navlyDto } = createNavlyDto
         const idsToUse = balanceIds?.length ? balanceIds : [];
 
         if ( idsToUse.length > 0 ) {
             const balances = await this.balance.findMany({
-                where: { id: { in: idsToUse } },
+                where: { id: { in: idsToUse }},
             });
 
             if ( balances.length !== idsToUse.length ) {
@@ -84,16 +86,17 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
                     balanceId       : id,
                     userId          : createNavlyDto.userId,
                     principal       : index === 0,
-                    expirationDate
+                    expirationDate,
+                    amount
                 })),
             });
 
-            if ( amount && expirationDatePayment ) {
+            if ( amount && expirationDate ) {
                 await this.paymentService.create({
                     data: {
                         userId          : createNavlyDto.userId,
                         amount          : amount,
-                        expirationDate  : expirationDatePayment,
+                        expirationDate  : expirationDate,
                         serviceId       : 'c712d5df-1b60-4d69-bddf-d8a6e003e3e2',
                         navlyId         : navly.id,
                     },
@@ -101,7 +104,7 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
             }
         }
 
-        return navly;
+        return this.findOne( navly.id );
     }
 
 
@@ -113,19 +116,56 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
             createNavlyDto.description  ??= result.ogDescription;
             createNavlyDto.name         ??= result.ogSiteName ?? result.ogTitle;
 
-            const navly = await this.createNavlyBasic(createNavlyDto, avatar);
-            return navly;
+            return await this.createNavlyBasic( createNavlyDto, avatar );
         } catch ( error ) {
             if ( error.error ) {
                 createNavlyDto.name        ??= this.#extractMainNameFromUrl( createNavlyDto.url );
                 createNavlyDto.description ??= 'Sin descripción';
                 createNavlyDto.category    ??= WebsiteCategory.OTHER;
 
-                const navly = await this.createNavlyBasic(createNavlyDto, undefined);
-                return navly;
+                return await this.createNavlyBasic( createNavlyDto, undefined );
             }
 
             throw PrismaException.catch( error, 'Navly' );
+        }
+    }
+
+
+    #selectNavly = {
+        id: true,
+        name: true,
+        avatar: true,
+        description: true,
+        url: true,
+        createdAt: true,
+        updatedAt: true,
+        category: true,
+        lastViewed: true,
+        isFavorite: true,
+        navlyBalances: {
+            select: {
+                id: true,
+                principal: true,
+                expirationDate: true,
+                createdAt: true,
+                updatedAt: true,
+                amount: true,
+                balance: {
+                    select: {
+                        id: true,
+                        name: true,
+                        balance: true,
+                        type: true
+                    }
+                }
+            }
+        },
+        account: {
+            select: {
+                id: true,
+                name: true,
+                username: true,
+            }
         }
     }
 
@@ -135,47 +175,8 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
     ) {
         try {
             return await this.navly.findMany({
-                select: {
-                    id: true,
-                    name: true,
-                    avatar: true,
-                    description: true,
-                    url: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    category: true,
-                    lastViewed: true,
-                    isFavorite: true,
-                    navlyBalances: {
-                        select: {
-                            id: true,
-                            principal: true,
-                            expirationDate: true,
-                            createdAt: true,
-                            updatedAt: true,
-                            balance: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    balance: true,
-                                    type: true
-                                }
-                            }
-                        }
-                    },
-                    account: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                        }
-                    }
-                },
+                select: this.#selectNavly,
                 where: { userId },
-                // include: {
-                //     navlyBalances: true,
-                //     account: true
-                // }
             });
         } catch ( error ) {
             throw PrismaException.catch( error, 'Navly' );
@@ -183,15 +184,23 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
     }
 
 
-    async findOne(
-        id: string
-    ) {
+    async findOne( id: string ) {
         try {
             return await this.navly.findUnique({
+                select  : this.#selectNavly,
+                where   : { id },
+            });
+        } catch ( error ) {
+            throw PrismaException.catch( error, 'Navly' );
+        }
+    }
+
+
+    async findOneBasic( id: string ) {
+        try {
+            return await this.navly.findUnique({
+                select: this.#selectNavly,
                 where: { id },
-                include: {
-                    navlyBalances: true
-                }
             });
         } catch ( error ) {
             throw PrismaException.catch( error, 'Navly' );
@@ -212,10 +221,31 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
             updateNavlyDto.avatar       = result.ogImage?.[0].url;
         }
 
+        if ( updateNavlyDto.balanceIds ) {
+            const navlyBalance = await this.navlyBalance.findMany({
+                where: { navlyId: id },
+            });
+
+            const navlyBalancedIds = navlyBalance.map(( balance ) => balance.balanceId);
+            const newBalancesIds = updateNavlyDto.balanceIds.filter(( balanceId ) => !navlyBalancedIds.includes( balanceId ));
+
+            if ( newBalancesIds.length > 0 ) {
+                await this.navlyBalance.createMany({
+                    data: newBalancesIds.map(( balanceId ) => ({
+                        navlyId: id,
+                        balanceId,
+                        userId: updateNavlyDto.userId,
+                    })),
+                });
+            }
+        }
+
+        const { amount, balanceIds, expirationDate, ...rest } = updateNavlyDto;
+
         try {
             return await this.navly.update({
                 where: { id },
-                data: updateNavlyDto,
+                data: rest,
             });
         } catch ( error ) {
             throw PrismaException.catch( error, 'Navly' );
