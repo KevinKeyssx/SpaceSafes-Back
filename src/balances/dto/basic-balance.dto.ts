@@ -10,7 +10,8 @@ import {
     MaxLength,
     Length,
     Matches,
-    IsDate
+    IsDate,
+    IsBoolean
 } from 'class-validator';
 
 import {
@@ -111,7 +112,6 @@ export class BasicBalanceDto {
     @IsOptional()
     @IsString()
     @Length(3, 4)
-    @Matches(/^[0-9]+$/, { message: 'El código de verificación solo debe contener dígitos' })
     verificationNumber?: string;
 
     @ApiPropertyOptional({
@@ -123,4 +123,13 @@ export class BasicBalanceDto {
     @IsDate()
 	@Transform(({ value }) => new Date(value))
     lastPayment?: Date;
+
+    @ApiPropertyOptional({
+        description: '¿Es favorito?',
+        example: false,
+        required: false
+    })
+    @IsOptional()
+    @IsBoolean()
+    isFavorite?: boolean;
 }
