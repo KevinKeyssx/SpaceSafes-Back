@@ -28,17 +28,6 @@ export class BalancePaymentDto {
 
 
     @ApiProperty({
-        type: Date,
-        description: 'Fecha de expiración del pago',
-        required: false
-    })
-    @IsDate()
-    @IsOptional()
-    @Transform(({ value }) => new Date( value ))
-    expirationDatePayment?: Date;
-
-
-    @ApiProperty({
         type: Number,
         description: 'Monto',
         required: false
