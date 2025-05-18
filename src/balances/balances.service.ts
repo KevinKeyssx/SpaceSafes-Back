@@ -27,6 +27,7 @@ export class BalancesService extends PrismaClient implements OnModuleInit {
         lastPayment         : true,
         createdAt           : true,
         updatedAt           : true,
+        isFavorite          : true,
         navlyBalances       : {
             select: {
                 navly: {
