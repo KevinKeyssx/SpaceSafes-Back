@@ -95,13 +95,13 @@ model PaymentDetail {
     updatedAt       DateTime @updatedAt
 
     balanceId String // Nuevo campo para la relación con Balance
-    balance   Balance @relation(fields: [balanceId], references: [id], onDelete: Cascade) // Relación con Balance
+    balance   Balance @relation(fields: [balanceId], references: [id]) // Relación con Balance
 
     paymentId String // Nuevo campo para la relación con Payment
     payment   Payment  @relation(fields: [paymentId], references: [id]) // Relación con Payment
 
     paymentServiceId String // Nuevo campo para la relación con PaymentService
-    paymentService   PaymentService  @relation(fields: [paymentServiceId], references: [id], onDelete: Cascade) // Relación con PaymentService
+    paymentService   PaymentService  @relation(fields: [paymentServiceId], references: [id]) // Relación con PaymentService
 
     @@index([userId, paymentId, paymentServiceId])
 }
