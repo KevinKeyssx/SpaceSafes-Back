@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, ParseArrayPipe, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ParseArrayPipe, Query, ParseUUIDPipe } from '@nestjs/common';
 
 import { PaymentDetailsService }            from '@payment-details/payment-details.service';
 import { CreateMultiplePaymentDetailDto }   from '@payment-details/dto/create-multiple-payment-detaill.dto';
@@ -10,7 +10,7 @@ export class PaymentDetailsController {
         private readonly paymentDetailsService: PaymentDetailsService
     ) {}
 
-    @Post( 'multiple' )
+    @Post()
     createMultiple(
         @Body() createMultiplePaymentDetailDto: CreateMultiplePaymentDetailDto
     ) {
@@ -28,12 +28,20 @@ export class PaymentDetailsController {
     }
 
 
-    @Delete( ':userId' )
-    remove(
+    @Delete( '/multiple/:userId' )
+    removeMultiple(
         @Param( 'userId' ) userId: string,
         @Query('ids', new ParseArrayPipe({ items: String, separator: ',' })) ids: string[]
     ) {
-        return this.paymentDetailsService.remove( userId, ids );
+        return this.paymentDetailsService.removeMultiple( userId, ids );
+    }
+
+
+    @Delete( ':id' )
+    remove(
+        @Param( 'id', ParseUUIDPipe ) id: string,
+    ) {
+        return this.paymentDetailsService.remove( id );
     }
 
 }
