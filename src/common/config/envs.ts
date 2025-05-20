@@ -6,6 +6,7 @@ export const envSchema = z.object({
     PORT                : z.coerce.number().default(3000),
     CLERK_SECRET_KEY    : z.string().min(1),
     DATABASE_URL        : z.string().url(),
+    PASSWORD_SECRET_KEY : z.string(),
 });
 
 export const ENVS = envSchema.parse(process.env);
