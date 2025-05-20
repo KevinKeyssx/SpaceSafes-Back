@@ -13,10 +13,38 @@ export class PaymentServicesService extends PrismaClient implements OnModuleInit
 		this.$connect();
 	}
 
+    #selectPaymentService = {
+        id: true,
+        description: true,
+        amount: true,
+        expirationDate: true,
+        navly: {
+            select: {
+                id: true,
+                name: true,
+                avatar: true,
+                url: true,
+                createdAt: true,
+                updatedAt: true,
+                category: true,
+                lastViewed: true,
+                isFavorite: true,
+            }
+        },
+        service: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+            }
+        }
+    }
+
 
     async create( createPaymentServiceDto: CreatePaymentServiceDto ) {
         try {
             const paymentService = await this.paymentService.create({
+                select: this.#selectPaymentService,
                 data: createPaymentServiceDto,
             });
 
@@ -30,6 +58,7 @@ export class PaymentServicesService extends PrismaClient implements OnModuleInit
     async findAll( userId: string ) {
         try {
             return await this.paymentService.findMany({
+                select: this.#selectPaymentService,
                 where: { userId },
             });
         } catch ( error ) {
@@ -54,6 +83,7 @@ export class PaymentServicesService extends PrismaClient implements OnModuleInit
     async update( id: string, updatePaymentServiceDto: UpdatePaymentServiceDto ) {
         try {
             return await this.paymentService.update({
+                select: this.#selectPaymentService,
                 where: { id },
                 data: updatePaymentServiceDto,
             });
