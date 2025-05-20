@@ -114,7 +114,7 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
             const avatar        = result.ogImage?.[0].url;
 
             createNavlyDto.description  ??= result.ogDescription;
-            createNavlyDto.name         ??= result.ogSiteName ?? result.ogTitle;
+            createNavlyDto.name         ??= result.ogSiteName ?? result.ogTitle ?? this.#extractMainNameFromUrl( createNavlyDto.url );
 
             return await this.createNavlyBasic( createNavlyDto, avatar );
         } catch ( error ) {
@@ -216,7 +216,9 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
             const { result }    = await ogs({ url: updateNavlyDto.url });
 
             updateNavlyDto.description  ??= result.ogDescription;
-            updateNavlyDto.name         ??= result.ogTitle;
+            updateNavlyDto.name         ??= result.ogSiteName ?? result.ogTitle ?? this.#extractMainNameFromUrl( updateNavlyDto.url );
+
+            // TODO: Cuando suba imagenes
             // updateNavlyDto.avatar       ??= result.ogImage?.[0].url;
             updateNavlyDto.avatar       = result.ogImage?.[0].url;
         }
