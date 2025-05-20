@@ -10,6 +10,7 @@ import { PrismaException } from '@common/error/prisma-catch';
 
 
 import ogs from 'open-graph-scraper';
+import { decryptPassword, encryptPassword } from './utils/crypto';
 
 
 @Injectable()
@@ -36,7 +37,10 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             }
 
             const account = await this.account.create({
-                data: rest,
+                data: {
+                    ...rest,
+                    password : encryptPassword( rest.password ),
+                },
                 include: {
                     navly: true
                 }
@@ -86,6 +90,7 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             //     }
             // }
 
+            account.password = decryptPassword( account.password );
             return { account, navly };
         } catch ( error ) {
             if ( error.error ) {
@@ -98,7 +103,7 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
 
 
     async findAll( userId: string ) {
-        return await this.account.findMany({
+        const accounts = await this.account.findMany({
             select: {
                 id: true,
                 name: true,
@@ -106,6 +111,7 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
                 password: true,
                 createdAt: true,
                 updatedAt: true,
+                isFavorite: true,
                 navly: {
                     select: {
                         url: true,
@@ -114,6 +120,11 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             },
             where: { userId }
         });
+
+        return accounts.map(( account ) => ({
+            ...account,
+            password: decryptPassword( account.password ),
+        }));
     }
 
 
@@ -136,7 +147,14 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
                 where: { id },
             });
 
-            return account;
+            if ( !account ) {
+                throw new NotFoundException( 'Account not found' );
+            }
+
+            return {
+                ...account,
+                password: decryptPassword( account.password ),
+            };
         } catch ( error ) {
             throw PrismaException.catch( error, 'Account' );
         }
@@ -171,6 +189,10 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             //     });
             // }
 
+            if ( updateAccountDto.password ) {
+                updateAccountDto.password = encryptPassword( updateAccountDto.password );
+            }
+
             const account = await this.account.update({
                 where: { id },
                 data: updateAccountDto,
@@ -179,7 +201,10 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
                 }
             });
 
-            return account;
+            return {
+                ...account,
+                password: decryptPassword( account.password ),
+            };
         } catch ( error ) {
             throw PrismaException.catch( error, 'Account' );
         }
