@@ -5,6 +5,7 @@ import {
     IsEnum,
     IsOptional,
     IsString,
+    IsUUID,
     IsUrl,
     Length
 } from "class-validator";
@@ -69,4 +70,14 @@ export class BasicNavlyDto {
     @IsOptional()
     @IsBoolean()
     isFavorite?: boolean;
+
+
+    @ApiProperty({
+        description: 'Optional account id associated with the account',
+        example: '12345678-1234-1234-1234-123456789012',
+        required: false
+    })
+    @IsOptional()
+    @IsUUID()
+    accountId?: string;
 }
