@@ -212,44 +212,77 @@ export class NavlyService extends PrismaClient implements OnModuleInit {
         id: string,
         updateNavlyDto: UpdateNavlyDto
     ) {
-        if ( updateNavlyDto.url ) {
-            const { result }    = await ogs({ url: updateNavlyDto.url });
-
-            updateNavlyDto.description  ??= result.ogDescription;
-            updateNavlyDto.name         ??= result.ogSiteName ?? result.ogTitle ?? this.#extractMainNameFromUrl( updateNavlyDto.url );
-
-            // TODO: Cuando suba imagenes
-            // updateNavlyDto.avatar       ??= result.ogImage?.[0].url;
-            updateNavlyDto.avatar       = result.ogImage?.[0].url;
-        }
-
-        if ( updateNavlyDto.balanceIds ) {
-            const navlyBalance = await this.navlyBalance.findMany({
-                where: { navlyId: id },
-            });
-
-            const navlyBalancedIds = navlyBalance.map(( balance ) => balance.balanceId);
-            const newBalancesIds = updateNavlyDto.balanceIds.filter(( balanceId ) => !navlyBalancedIds.includes( balanceId ));
-
-            if ( newBalancesIds.length > 0 ) {
-                await this.navlyBalance.createMany({
-                    data: newBalancesIds.map(( balanceId ) => ({
-                        navlyId: id,
-                        balanceId,
-                        userId: updateNavlyDto.userId,
-                    })),
-                });
-            }
-        }
-
-        const { amount, balanceIds, expirationDate, ...rest } = updateNavlyDto;
-
         try {
+            if ( updateNavlyDto.url ) {
+                const { result }    = await ogs({ url: updateNavlyDto.url });
+
+                updateNavlyDto.description  ??= result.ogDescription;
+                updateNavlyDto.name         ??= result.ogSiteName ?? result.ogTitle ?? this.#extractMainNameFromUrl( updateNavlyDto.url );
+
+                // TODO: Cuando suba imagenes
+                // updateNavlyDto.avatar       ??= result.ogImage?.[0].url;
+                updateNavlyDto.avatar       = result.ogImage?.[0].url;
+            }
+
+            if ( updateNavlyDto.balanceIds ) {
+                const navlyBalance = await this.navlyBalance.findMany({
+                    where: { navlyId: id },
+                });
+
+                const navlyBalancedIds = navlyBalance.map(( balance ) => balance.balanceId);
+                const newBalancesIds = updateNavlyDto.balanceIds.filter(( balanceId ) => !navlyBalancedIds.includes( balanceId ));
+
+                if ( newBalancesIds.length > 0 ) {
+                    await this.navlyBalance.createMany({
+                        data: newBalancesIds.map(( balanceId ) => ({
+                            navlyId: id,
+                            balanceId,
+                            userId: updateNavlyDto.userId,
+                        })),
+                    });
+                }
+            }
+
+            const { amount, balanceIds, expirationDate, ...rest } = updateNavlyDto;
+
             return await this.navly.update({
                 where: { id },
                 data: rest,
             });
         } catch ( error ) {
+            if ( error.error ) {
+                console.log('🚀 ~ file: navly.service.ts:254 ~ SE CAYOOOOOOOOOOOOOOOOO')
+                updateNavlyDto.name        = this.#extractMainNameFromUrl( updateNavlyDto.url! );
+                updateNavlyDto.description = 'Sin descripción';
+                updateNavlyDto.category    = WebsiteCategory.OTHER;
+
+                if ( updateNavlyDto.balanceIds ) {
+                    const navlyBalance = await this.navlyBalance.findMany({
+                        where: { navlyId: id },
+                    });
+
+                    const navlyBalancedIds = navlyBalance.map(( balance ) => balance.balanceId);
+                    const newBalancesIds = updateNavlyDto.balanceIds.filter(( balanceId ) => !navlyBalancedIds.includes( balanceId ));
+
+                    if ( newBalancesIds.length > 0 ) {
+                        await this.navlyBalance.createMany({
+                            data: newBalancesIds.map(( balanceId ) => ({
+                                navlyId: id,
+                                balanceId,
+                                userId: updateNavlyDto.userId,
+                            })),
+                        });
+                    }
+                }
+
+                const { amount, balanceIds, expirationDate, ...rest } = updateNavlyDto;
+
+                return await this.navly.update({
+                    where: { id },
+                    data: rest,
+                });
+            }
+
             throw PrismaException.catch( error, 'Navly' );
         }
     }
