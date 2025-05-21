@@ -5,5 +5,6 @@ import { NavlyController } from './navly.controller';
 @Module({
   controllers: [NavlyController],
   providers: [NavlyService],
+  exports: [NavlyService]
 })
 export class NavlyModule {}
