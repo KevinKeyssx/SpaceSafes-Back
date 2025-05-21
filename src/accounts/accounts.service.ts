@@ -1,20 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { OnModuleInit } from '@nestjs/common';
 
-import { Account, Navly, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 import { CreateAccountDto } from '@accounts/dto/create-account.dto';
 import { UpdateAccountDto } from '@accounts/dto/update-account.dto';
-import { AccountEntity }    from '@accounts/entities/account.entity';
 import { PrismaException } from '@common/error/prisma-catch';
-
-
-import ogs from 'open-graph-scraper';
+import { NavlyService } from '@navly/navly.service';
 import { decryptPassword, encryptPassword } from './utils/crypto';
 
 
 @Injectable()
 export class AccountsService extends PrismaClient implements OnModuleInit {
+    constructor(
+        private readonly navlyService: NavlyService
+    ) {
+        super();
+    }
+    
     onModuleInit() {
 		this.$connect();
 	}
@@ -25,45 +28,27 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             let navly;
 
             const { url, ...rest } = createAccountDto;
-            let avatar : string | undefined;
-            let description : string | undefined;
-            let name : string | undefined;
-
-            if ( url ) {
-                const { result }    = await ogs({ url });
-                avatar        = result.ogImage?.[0].url;
-                description   = result.ogDescription;
-                name          = result.ogTitle;
-            }
 
             const account = await this.account.create({
                 data: {
                     ...rest,
                     password : encryptPassword( rest.password ),
-                },
-                include: {
-                    navly: true
                 }
             });
 
-            if ( url ) {
-                const existNavly  = await this.navly.findUnique({
-                    where: { url_userId: { url, userId: createAccountDto.userId } },
-                });
-
-                if ( !existNavly ) {
-                    navly = await this.navly.create({
-                        data: {
-                            url,
-                            avatar,
-                            description,
-                            name,
-                            userId: rest.userId,
-                            accountId: account.id
-                        },
-                    });
+            const navlyExists = await this.navly.findFirst({
+                where: {
+                    url,
+                    accountId: account.id
                 }
+            });
 
+            if ( url && !navlyExists ) {
+                navly = await this.navlyService.create({
+                    url,
+                    userId: rest.userId,
+                    accountId: account.id
+                });
             }
 
             // if ( balanceId ) {
@@ -90,8 +75,15 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
             //     }
             // }
 
-            account.password = decryptPassword( account.password );
-            return { account, navly };
+            let accountWithNavly = await this.account.findUnique({
+                where: { id: account.id },
+                include: {
+                    navly: true
+                }
+            });
+
+            accountWithNavly!.password = decryptPassword( accountWithNavly!.password );
+            return { account: accountWithNavly, navly };
         } catch ( error ) {
             if ( error.error ) {
                 throw new NotFoundException( 'URL invalid - Page not found' );
@@ -166,40 +158,50 @@ export class AccountsService extends PrismaClient implements OnModuleInit {
         updateAccountDto: UpdateAccountDto
     ) {
         try {
+            const { url, ...rest } = updateAccountDto;
 
-            // TODO: Hay que tener el userId del la request
-            // let navly;
+            let oldNavly;
 
-            // const { url, ...rest } = updateAccountDto;
+            if ( url ) {
+                oldNavly = await this.navly.findFirst({
+                    where: {
+                        url,
+                    },
+                    select: {
+                        url: true,
+                        id: true
+                    }
+                });
+            }
 
-            // if ( url ) {
-            //     const { result }    = await ogs({ url });
-            //     const avatar        = result.ogImage?.[0].url;
-            //     const description   = result.ogDescription;
-            //     const name          = result.ogTitle;
-
-            //     navly = await this.navly.create({
-            //         data: {
-            //             url,
-            //             avatar,
-            //             description,
-            //             name,
-            //             userId: rest.userId
-            //         },
-            //     });
-            // }
-
-            if ( updateAccountDto.password ) {
-                updateAccountDto.password = encryptPassword( updateAccountDto.password );
+            if ( rest.password ) {
+                rest.password = encryptPassword( rest.password );
             }
 
             const account = await this.account.update({
                 where: { id },
-                data: updateAccountDto,
+                data: rest,
                 include: {
                     navly: true
                 }
             });
+
+            if ( oldNavly ) {
+                if ( url !== oldNavly.url ) {
+                    await this.navlyService.update( oldNavly.id, {
+                        url,
+                        userId: account.userId,
+                    });
+                }
+            } else {
+                if ( url ) {
+                    await this.navlyService.create({
+                        url,
+                        userId: account.userId,
+                        accountId: account.id,
+                    });
+                }
+            }
 
             return {
                 ...account,
